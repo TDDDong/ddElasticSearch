@@ -2,10 +2,7 @@ package com.yupi.springbootinit.manager;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.yupi.springbootinit.common.ErrorCode;
-import com.yupi.springbootinit.datasource.DataSource;
-import com.yupi.springbootinit.datasource.PictureDataSource;
-import com.yupi.springbootinit.datasource.PostDataSource;
-import com.yupi.springbootinit.datasource.UserDataSource;
+import com.yupi.springbootinit.datasource.*;
 import com.yupi.springbootinit.exception.BusinessException;
 import com.yupi.springbootinit.exception.ThrowUtils;
 import com.yupi.springbootinit.model.dto.search.SearchQueryRequest;
@@ -37,6 +34,8 @@ public class SearchFacade {
     private PostDataSource postDataSource;
     @Resource
     private PictureDataSource pictureDataSource;
+    @Resource
+    private DataSourceRegistry dataSourceRegistry;
 
     @PostMapping("/all")
     public SearchVO searchAll(@RequestBody SearchQueryRequest searchQueryRequest, HttpServletRequest request) {
@@ -97,13 +96,8 @@ public class SearchFacade {
                 throw new BusinessException(ErrorCode.SYSTEM_ERROR, "查询异常");
             }
         } else {
-            Map<String, DataSource<T>> typeDataSourceMap = new HashMap(){{
-                put(SearchTypeEnum.POST.getValue(), postDataSource);
-                put(SearchTypeEnum.USER.getValue(), userDataSource);
-                put(SearchTypeEnum.PICTURE.getValue(), pictureDataSource);
-            }};
             SearchVO searchVO = new SearchVO();
-            DataSource<T> dataSource = typeDataSourceMap.get(type);
+            DataSource<?> dataSource = dataSourceRegistry.getDataSourceByType(type);
             Page<?> page = dataSource.doSearch(searchText, current, pageSize);
             searchVO.setDataList(page.getRecords());
             return searchVO;
